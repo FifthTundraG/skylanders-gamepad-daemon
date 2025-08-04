@@ -7,31 +7,25 @@ TARGET = skylanders-gamepad-daemon
 SRCDIR = src
 SOURCES = $(SRCDIR)/main.c
 BUILDDIR = build
+OUTFILE = $(BUILDDIR)/$(TARGET)
+
+all: $(OUTFILE)
 
 # Create build directory if it doesn't exist
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-$(TARGET): $(SOURCES) | $(BUILDDIR)
+$(OUTFILE): $(SOURCES) | $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
-install: $(TARGET)
-	sudo cp $(TARGET) /usr/local/bin/
+install: $(OUTFILE)
+	sudo cp $< /usr/local/bin/$(TARGET)
 	sudo chmod +x /usr/local/bin/$(TARGET)
 
 uninstall:
 	sudo rm -f /usr/local/bin/$(TARGET)
 
 clean:
-	rm -f $(TARGET)
 	rm -rf $(BUILDDIR)
 
-debug:
-	@echo "CFLAGS: $(CFLAGS)"
-	@echo "LIBS: $(LIBS)"
-	@echo "SOURCES: $(SOURCES)"
-
-run: $(TARGET)
-	./$(TARGET)
-
-.PHONY: clean debug install uninstall run
+.PHONY: all clean install uninstall
