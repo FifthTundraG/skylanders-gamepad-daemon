@@ -3,14 +3,13 @@ Description=Skylanders Gamepad Daemon
 After=bluetooth.target
 
 [Service]
-ExecStart=/usr/bin/skylandersd
+ExecStart=/usr/bin/skylanders-gamepad-daemon
 WorkingDirectory=/root
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
 User=root
 Group=input
-Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target

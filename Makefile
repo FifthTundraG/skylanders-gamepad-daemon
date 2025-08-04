@@ -3,7 +3,7 @@ CFLAGS = -std=c11 -Wall -Wextra
 CFLAGS += $(shell pkg-config --cflags glib-2.0 gio-2.0 libevdev)
 LIBS = $(shell pkg-config --libs glib-2.0 gio-2.0 libevdev)
 
-TARGET = skylandersd
+TARGET = skylanders-gamepad-daemon
 SRCDIR = src
 SOURCES = $(SRCDIR)/main.c
 BUILDDIR = build
