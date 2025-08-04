@@ -1,7 +1,7 @@
 [project]
-name = "skylanderstt-gamepad-driver"
+name = "skylandersd"
 version = "0.1.0"
-description = "Add your description here"
+description = "Userspace daemon providing support for the Skylanders Trap Team mobile gamepad on Linux through uinput"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
