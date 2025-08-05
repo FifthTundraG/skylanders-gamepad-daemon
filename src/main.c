@@ -97,13 +97,7 @@ static void cleanup_virtual_gamepad(void) {
 }
 
 // Parse gamepad data and emit events
-static void process_gamepad_data(const guchar *data, gsize length) {
-    printf("Raw data [%zu bytes]: ", length);
-    for (gsize i = 0; i < length; i++) {
-        printf("%02x ", data[i]);
-    }
-    printf("\n");
-    
+static void process_gamepad_data(const guchar *data, gsize length) {    
     uint16_t buttons = data[8];
     int16_t shoulders_and_pause = data[9]; // shoulders and pause button use the same byte because why not
     int16_t trigger_l = data[10]; // pressed when 0xFF
@@ -352,9 +346,9 @@ static void on_device_properties_changed(GDBusConnection *connection,
                                          GVariant *parameters,
                                          gpointer user_data) {
     (void)connection; (void)sender_name; (void)user_data;
-    
+
     if (strcmp(object_path, device_path) != 0 ||
-        strcmp(interface_name, "org.bluez.Device1") != 0 ||
+        strcmp(interface_name, "org.freedesktop.DBus.Properties") != 0 ||
         strcmp(signal_name, "PropertiesChanged") != 0) {
         return;
     }
@@ -449,7 +443,7 @@ int main(int argc, char *argv[]) {
     device_path = get_device_path();
     printf("Monitoring device at %s\n", device_path);
     
-    // Subscribe to device property changes
+    // Subscribe to device property changes, this will automatically setup our virtual gamepad on device connect
     g_dbus_connection_signal_subscribe(conn,
         "org.bluez",
         "org.freedesktop.DBus.Properties",
