@@ -144,7 +144,8 @@ char *find_gamepad_device_path(void) {
     }
 
     GError *error = NULL;
-    GVariant *result = g_dbus_connection_call_sync(conn,
+    GVariant *result = g_dbus_connection_call_sync(
+        conn,
         "org.bluez",
         "/",
         "org.freedesktop.DBus.ObjectManager",
@@ -154,7 +155,8 @@ char *find_gamepad_device_path(void) {
         G_DBUS_CALL_FLAGS_NONE,
         -1,
         NULL,
-        &error);
+        &error
+    );
 
     if (!result) {
         g_printerr("Failed to get managed objects: %s\n", error->message);
@@ -162,13 +164,11 @@ char *find_gamepad_device_path(void) {
         return NULL;
     }
 
-    GVariantIter *objects;
+    GVariantIter *objects = NULL;
     g_variant_get(result, "(a{oa{sa{sv}}})", &objects);
 
     const char *object_path;
     GVariantIter *interfaces;
-
-    static char found_path[200] = {0};
 
     while (g_variant_iter_loop(objects, "{oa{sa{sv}}}", &object_path, &interfaces)) {
         const char *interface_name;
@@ -181,29 +181,27 @@ char *find_gamepad_device_path(void) {
                 const char *name = NULL;
                 gboolean connected = FALSE;
 
-                // Reset before each device
-                name = NULL;
-                connected = FALSE;
-
                 while (g_variant_iter_loop(properties, "{sv}", &prop_name, &prop_value)) {
                     if (strcmp(prop_name, "Name") == 0 || strcmp(prop_name, "Alias") == 0) {
                         name = g_variant_get_string(prop_value, NULL);
-                    } 
+                    }
                     if (strcmp(prop_name, "Connected") == 0) {
                         connected = g_variant_get_boolean(prop_value);
                     }
                 }
 
                 if (name && strcmp(name, DEVICE_NAME) == 0 && connected) {
-                    strncpy(found_path, object_path, sizeof(found_path) - 1);
-                    found_path[sizeof(found_path) - 1] = '\0';
+                    g_free(device_path);
+                    device_path = g_strdup(object_path);
+                    g_variant_iter_free(objects);
                     g_variant_unref(result);
-                    return found_path;
+                    return device_path;
                 }
             }
         }
     }
 
+    g_variant_iter_free(objects);
     g_variant_unref(result);
     return NULL;
 }
@@ -389,7 +387,8 @@ void on_bluez_properties_changed(GDBusConnection *connection,
 // Handle device connection/disconnection
 void handle_device_connection_change(gboolean connected) {
     if (connected == device_connected) {
-        printf("Ignoring connection change call, already in state: %s\n", connected ? "connected" : "disconnected");
+        //* i don't want to print below (at least by default), i think it makes the user think something is wrong when in reality it usually just means a device was connected via bluez and it wasn't the gamepad
+        //printf("Ignoring connection change call, already in state: %s\n", connected ? "connected" : "disconnected");
         return; // No change
     }
     
