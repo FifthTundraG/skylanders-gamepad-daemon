@@ -82,29 +82,29 @@ void process_gamepad_data(const guchar *data) {
     static uint16_t prev_buttons = 0;
     uint16_t changed = buttons ^ prev_buttons;
     
-    if (changed & 0x10) write_event(EV_KEY, BTN_A, (buttons & 0x10) ? 1 : 0);
-    if (changed & 0x20) write_event(EV_KEY, BTN_B, (buttons & 0x20) ? 1 : 0);
-    if (changed & 0x40) write_event(EV_KEY, BTN_X, (buttons & 0x40) ? 1 : 0);
-    if (changed & 0x80) write_event(EV_KEY, BTN_Y, (buttons & 0x80) ? 1 : 0);
-    if (changed & 0x01) write_event(EV_KEY, BTN_DPAD_UP, (buttons & 0x01) ? 1 : 0);
-    if (changed & 0x02) write_event(EV_KEY, BTN_DPAD_DOWN, (buttons & 0x02) ? 1 : 0);
-    if (changed & 0x04) write_event(EV_KEY, BTN_DPAD_LEFT, (buttons & 0x04) ? 1 : 0);
-    if (changed & 0x08) write_event(EV_KEY, BTN_DPAD_RIGHT, (buttons & 0x08) ? 1 : 0);
+    if (changed & BUTTON_A_MASK) write_event(EV_KEY, BTN_A, (buttons & BUTTON_A_MASK) ? 1 : 0);
+    if (changed & BUTTON_B_MASK) write_event(EV_KEY, BTN_B, (buttons & BUTTON_B_MASK) ? 1 : 0);
+    if (changed & BUTTON_X_MASK) write_event(EV_KEY, BTN_X, (buttons & BUTTON_X_MASK) ? 1 : 0);
+    if (changed & BUTTON_Y_MASK) write_event(EV_KEY, BTN_Y, (buttons & BUTTON_Y_MASK) ? 1 : 0);
+    if (changed & DPAD_UP_MASK) write_event(EV_KEY, BTN_DPAD_UP, (buttons & DPAD_UP_MASK) ? 1 : 0);
+    if (changed & DPAD_DOWN_MASK) write_event(EV_KEY, BTN_DPAD_DOWN, (buttons & DPAD_DOWN_MASK) ? 1 : 0);
+    if (changed & DPAD_LEFT_MASK) write_event(EV_KEY, BTN_DPAD_LEFT, (buttons & DPAD_LEFT_MASK) ? 1 : 0);
+    if (changed & DPAD_RIGHT_MASK) write_event(EV_KEY, BTN_DPAD_RIGHT, (buttons & DPAD_RIGHT_MASK) ? 1 : 0);
 
     // Shoulders and pause
     static int16_t prev_shoulders = 0;
     int16_t shoulders_changed = shoulders_and_pause ^ prev_shoulders;
-    if (shoulders_changed & 0x04) write_event(EV_KEY, BTN_START, (shoulders_and_pause & 04) ? 1 : 0); // let's have the pause button be our start button, this may change at some point
-    if (shoulders_changed & 0x10) write_event(EV_KEY, BTN_TL, (shoulders_and_pause & 0x10) ? 1 : 0);
-    if (shoulders_changed & 0x20) write_event(EV_KEY, BTN_TR, (shoulders_and_pause & 0x20) ? 1 : 0);
+    if (shoulders_changed & PAUSE_MASK) write_event(EV_KEY, BTN_START, (shoulders_and_pause & PAUSE_MASK) ? 1 : 0); // let's have the pause button be our start button, this may change at some point
+    if (shoulders_changed & SHOULDER_LEFT_MASK) write_event(EV_KEY, BTN_TL, (shoulders_and_pause & SHOULDER_LEFT_MASK) ? 1 : 0);
+    if (shoulders_changed & SHOULDER_RIGHT_MASK) write_event(EV_KEY, BTN_TR, (shoulders_and_pause & SHOULDER_RIGHT_MASK) ? 1 : 0);
     
     // Triggers (L2/R2)
     static int16_t prev_trigger_l = 0, prev_trigger_r = 0;
     if (trigger_l != prev_trigger_l) {
-        write_event(EV_KEY, BTN_TL2, (trigger_l == 0xFF) ? 1 : 0);
+        write_event(EV_KEY, BTN_TL2, (trigger_l == TRIGGER_DOWN) ? 1 : 0);
     }
     if (trigger_r != prev_trigger_r) {
-        write_event(EV_KEY, BTN_TR2, (trigger_r == 0xFF) ? 1 : 0);
+        write_event(EV_KEY, BTN_TR2, (trigger_r == TRIGGER_DOWN) ? 1 : 0);
     }
     
     // Analog sticks
