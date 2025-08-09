@@ -19,18 +19,12 @@ typedef struct {
 
 // --- Global Variables ---
 extern GDBusConnection *conn;
-extern struct libevdev_uinput *uidev;
 extern char *device_path;
 extern char *char_path;
 extern gboolean device_connected;
 extern GMainLoop *main_loop;
 extern GHashTable *subscriptions;
 
-// --- Gamepad I/O ---
-void write_event(unsigned int type, unsigned int code, int value);
-void setup_virtual_gamepad(void);
-void cleanup_virtual_gamepad(void);
-void process_gamepad_data(const guchar *data);
 // Gamepad Subscriptions
 GamepadSubscription *subscribe_gamepad(const char *device_path);
 void gamepad_subscription_free(GamepadSubscription *sub);
