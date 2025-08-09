@@ -8,6 +8,10 @@ SRCDIR = src
 BUILDDIR = build
 OUTFILE = $(BUILDDIR)/$(TARGET)
 
+PREFIX ?= /usr
+BINDIR = $(PREFIX)/bin
+SYSTEMDUNITDIR = $(PREFIX)/lib/systemd/system
+
 # Find all .c files in SRCDIR
 SOURCES := $(wildcard $(SRCDIR)/*.c)
 # Create a .o path in BUILDDIR for each .c file
@@ -28,11 +32,13 @@ $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
 install: $(OUTFILE)
-	sudo cp $< /usr/local/bin/$(TARGET)
-	sudo chmod +x /usr/local/bin/$(TARGET)
+	install -Dm755 $(OUTFILE) $(DESTDIR)$(BINDIR)/$(TARGET)
+	install -Dm644 systemd/skylanders-gamepad-daemon.service \
+		$(DESTDIR)$(SYSTEMDUNITDIR)/skylanders-gamepad-daemon.service
 
 uninstall:
-	sudo rm -f /usr/local/bin/$(TARGET)
+	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
+	rm -f $(DESTDIR)$(SYSTEMDUNITDIR)/skylanders-gamepad-daemon.service
 
 clean:
 	rm -rf $(BUILDDIR)
