@@ -17,6 +17,8 @@ char *char_path = NULL;
 gboolean device_connected = FALSE;
 GMainLoop *main_loop = NULL;
 
+GHashTable *subscriptions; // key: device_path, value: GamepadSubscription*
+
 void write_event(unsigned int type, unsigned int code, int value) {
     if (uidev) {
         libevdev_uinput_write_event(uidev, type, code, value);
@@ -132,6 +134,49 @@ void process_gamepad_data(const guchar *data) {
     prev_shoulders = shoulders_and_pause;
     prev_trigger_l = trigger_l;
     prev_trigger_r = trigger_r;
+}
+
+GamepadSubscription *subscribe_gamepad(const char *device_path) {
+    GamepadSubscription *subscription = g_new0(GamepadSubscription, 1);
+    subscription->device_path = g_strdup(device_path);
+
+    // Subscribe to characteristic property changes
+    subscription->characteristic_properties_changed_id = g_dbus_connection_signal_subscribe(
+        conn,
+        "org.bluez",
+        "org.freedesktop.DBus.Properties", 
+        "PropertiesChanged",
+        char_path,
+        NULL,
+        G_DBUS_SIGNAL_FLAGS_NONE,
+        on_characteristic_properties_changed,
+        NULL,
+        NULL);
+
+    // Subscribe to device property changes
+    subscription->disconnected_id = g_dbus_connection_signal_subscribe(
+        conn,
+        "org.bluez",
+        "org.freedesktop.DBus.Properties",
+        "PropertiesChanged", 
+        device_path,
+        NULL,
+        G_DBUS_SIGNAL_FLAGS_NONE,
+        on_device_properties_changed,
+        NULL,
+        NULL);
+
+    return subscription;
+}
+
+void gamepad_subscription_free(GamepadSubscription *sub) {
+    if (sub == NULL)
+        return;
+    
+    g_dbus_connection_signal_unsubscribe(conn, sub->characteristic_properties_changed_id);
+    g_dbus_connection_signal_unsubscribe(conn, sub->disconnected_id);
+    g_free(sub->device_path);
+    g_free(sub);
 }
 
 // Find the gamepad device path by scanning BlueZ managed objects for a device with the name DEVICE_NAME and status connected
@@ -412,28 +457,8 @@ void handle_device_connection_change(gboolean connected) {
         // Set up virtual gamepad
         setup_virtual_gamepad();
         
-        // Subscribe to characteristic property changes
-        g_dbus_connection_signal_subscribe(conn,
-            "org.bluez",
-            "org.freedesktop.DBus.Properties", 
-            "PropertiesChanged",
-            char_path,
-            NULL,
-            G_DBUS_SIGNAL_FLAGS_NONE,
-            on_characteristic_properties_changed,
-            NULL,
-            NULL);
-        
-        g_dbus_connection_signal_subscribe(conn,
-            "org.bluez",
-            "org.freedesktop.DBus.Properties",
-            "PropertiesChanged", 
-            device_path,
-            NULL,
-            G_DBUS_SIGNAL_FLAGS_NONE,
-            on_device_properties_changed,
-            NULL,
-            NULL);
+        GamepadSubscription *sub = subscribe_gamepad(device_path);
+        g_hash_table_insert(subscriptions, g_strdup(device_path), sub);
 
         GError *error = NULL;
         GVariant *result = g_dbus_connection_call_sync(conn,
@@ -453,13 +478,13 @@ void handle_device_connection_change(gboolean connected) {
             g_error_free(error);
             return;
         }
+        g_variant_unref(result);
         
         printf("Skylanders gamepad ready!\n");
-        
     } else {
         printf("Skylanders gamepad disconnected\n");
         cleanup_virtual_gamepad();
-        // todo: unsub from signals
+        g_hash_table_remove(subscriptions, device_path);
         device_path = NULL;
         char_path = NULL;
     }
@@ -521,6 +546,13 @@ int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     
     printf("Starting Skylanders GamePad Daemon\n");
+
+    // make our subscriptions hashtable exist
+    subscriptions = g_hash_table_new_full(
+        g_str_hash, g_str_equal,
+        g_free,
+        (GDestroyNotify)gamepad_subscription_free
+    );
     
     // Set up signal handlers
     signal(SIGINT, signal_handler);
