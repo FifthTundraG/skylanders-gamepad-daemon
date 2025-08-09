@@ -63,10 +63,11 @@ void gamepad_subscription_free(GamepadSubscription *sub) {
 
 // Find the gamepad device path by scanning BlueZ managed objects for a device with the name DEVICE_NAME and status connected
 char *find_gamepad_device_path(void) {
-    printf("Searching for gamepad device...\n");
+    g_message("Searching for gamepad device...\n");
 
     if (device_path != NULL) {
-        printf("A device path is already set, a device must already be connected. Ignoring search and returning existing device_path.\n");
+        //? should this warn?
+        g_message("A device path is already set, a device must already be connected. Ignoring search and returning existing device_path.\n");
         return device_path;
     }
 
@@ -86,7 +87,7 @@ char *find_gamepad_device_path(void) {
     );
 
     if (!result) {
-        g_printerr("Failed to get managed objects: %s\n", error->message);
+        g_error("Failed to get managed objects: %s\n", error->message);
         g_error_free(error);
         return NULL;
     }
@@ -139,7 +140,7 @@ char *find_characteristic_path(const char *device_path, const char *uuid) {
     GVariant *result = NULL;
     static char char_path[200];
     
-    printf("Searching for characteristic %s...\n", uuid);
+    g_message("Searching for characteristic %s...\n", uuid);
     
     // Get all objects from BlueZ
     result = g_dbus_connection_call_sync(conn,
@@ -155,7 +156,7 @@ char *find_characteristic_path(const char *device_path, const char *uuid) {
         &error);
         
     if (!result) {
-        g_printerr("Failed to get managed objects: %s\n", error->message);
+        g_error("Failed to get managed objects: %s\n", error->message);
         g_error_free(error);
         return NULL;
     }
@@ -203,7 +204,7 @@ char *find_characteristic_path(const char *device_path, const char *uuid) {
         }
     }
     
-    printf("Characteristic not found! Found %d total characteristics.\n", characteristics_found);
+    g_warning("Characteristic not found! Found %d total characteristics.\n", characteristics_found);
     g_variant_unref(result);
     return NULL;
 }
@@ -278,7 +279,7 @@ void on_device_properties_changed(GDBusConnection *connection,
     while (g_variant_iter_loop(changed_properties, "{&sv}", &property_name, &property_value)) {
         if (strcmp(property_name, "Connected") == 0) {
             gboolean connected = g_variant_get_boolean(property_value);
-            printf("Device connection state changed: %s\n", connected ? "connected" : "disconnected");
+            g_message("Device connection state changed: %s\n", connected ? "connected" : "disconnected");
             handle_device_connection_change(connected);
         }
     }
@@ -303,7 +304,7 @@ void on_bluez_properties_changed(GDBusConnection *connection,
     device_path = find_gamepad_device_path();
 
     if (device_path != NULL) {
-        printf("Found gamepad device at %s\n", device_path);
+        g_message("Found gamepad device at %s\n", device_path);
 
         handle_device_connection_change(TRUE);
     } else {
@@ -315,14 +316,14 @@ void on_bluez_properties_changed(GDBusConnection *connection,
 void handle_device_connection_change(gboolean connected) {
     if (connected == device_connected) {
         //* i don't want to print below (at least by default), i think it makes the user think something is wrong when in reality it usually just means a device was connected via bluez and it wasn't the gamepad
-        //printf("Ignoring connection change call, already in state: %s\n", connected ? "connected" : "disconnected");
+        //g_warning("Ignoring connection change call, already in state: %s\n", connected ? "connected" : "disconnected");
         return; // No change
     }
     
     device_connected = connected;
     
     if (connected) {
-        printf("Skylanders gamepad connected!\n");
+        g_message("Skylanders gamepad connected!\n");
         
         // Wait a bit for services to resolve
         g_usleep(2000000); // 2 seconds
@@ -330,11 +331,11 @@ void handle_device_connection_change(gboolean connected) {
         // Find the characteristic
         char_path = find_characteristic_path(device_path, CHARACTERISTIC_UUID);
         if (!char_path) {
-            printf("Could not find characteristic %s\n", CHARACTERISTIC_UUID);
+            g_error("Could not find characteristic %s\n", CHARACTERISTIC_UUID);
             return;
         }
         
-        printf("Found characteristic at %s\n", char_path);
+        g_message("Found characteristic at %s\n", char_path);
         
         // Set up virtual gamepad
         setup_virtual_gamepad();
@@ -356,15 +357,15 @@ void handle_device_connection_change(gboolean connected) {
             &error);
             
         if (!result) {
-            printf("StartNotify failed: %s\n", error->message);
+            g_error("StartNotify failed: %s\n", error->message);
             g_error_free(error);
             return;
         }
         g_variant_unref(result);
         
-        printf("Skylanders gamepad ready!\n");
+        g_message("Skylanders gamepad ready!\n");
     } else {
-        printf("Skylanders gamepad disconnected\n");
+        g_message("Skylanders gamepad disconnected\n");
         cleanup_virtual_gamepad();
         g_hash_table_remove(subscriptions, device_path);
         device_path = NULL;
@@ -376,7 +377,7 @@ void handle_device_connection_change(gboolean connected) {
 void check_initial_connection_state(void) {
     device_path = find_gamepad_device_path();
     if (device_path == NULL) {
-        printf("Could not find device path in initial connection check.\n");
+        g_message("Could not find device path in initial connection check.\n");
         return;
     }
 
@@ -395,7 +396,7 @@ void check_initial_connection_state(void) {
         &error);
         
     if (!result) {
-        printf("Device not found in BlueZ. Waiting for connection...\n");
+        g_message("Device not found in BlueZ. Waiting for connection...\n");
         if (error) g_error_free(error);
         return;
     }
@@ -407,17 +408,17 @@ void check_initial_connection_state(void) {
     g_variant_unref(result);
     
     if (connected) {
-        printf("Device already connected at startup\n");
+        g_message("Device already connected at startup\n");
         handle_device_connection_change(TRUE);
     } else {
-        printf("Device not connected at startup. Waiting...\n");
+        g_message("Device not connected at startup. Waiting...\n");
     }
 }
 
 // Signal handler for clean shutdown
 void signal_handler(int sig) {
     (void)sig;
-    printf("\nShutting down daemon...\n");
+    g_message("Shutting down daemon...\n");
     cleanup_virtual_gamepad();
     if (main_loop) {
         g_main_loop_quit(main_loop);
@@ -427,7 +428,7 @@ void signal_handler(int sig) {
 int main(int argc, char *argv[]) {
     (void)argc; (void)argv;
     
-    printf("Starting Skylanders GamePad Daemon\n");
+    g_message("Starting Skylanders GamePad Daemon\n");
 
     // make our subscriptions hashtable exist
     subscriptions = g_hash_table_new_full(
@@ -450,9 +451,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    printf("Connected to D-Bus\n");
+    g_message("Connected to D-Bus\n");
 
-    printf("Checking if device is already connected...\n");
+    g_message("Checking if device is already connected...\n");
     // Check if device is already connected
     check_initial_connection_state();
         
@@ -466,12 +467,12 @@ int main(int argc, char *argv[]) {
         on_bluez_properties_changed,
         NULL,
         NULL);
-    printf("Monitoring for new devices.\n");
+    g_message("Monitoring for new devices.\n");
     
     // Run daemon
     main_loop = g_main_loop_new(NULL, FALSE);
     
-    printf("Daemon running.\n");
+    g_message("Daemon running.\n");
     
     g_main_loop_run(main_loop);
     
@@ -482,6 +483,6 @@ int main(int argc, char *argv[]) {
     }
     g_main_loop_unref(main_loop);
     
-    printf("Daemon stopped\n");
+    g_message("Daemon stopped\n");
     return 0;
 }

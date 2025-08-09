@@ -13,13 +13,13 @@ static void write_event(const unsigned int type, const unsigned int code, const 
 
 void setup_virtual_gamepad(void) {
     if (uidev) {
-        printf("Virtual gamepad already exists\n");
+        g_warning("Cannot setup virtual gamepad: Already exists\n");
         return;
     }
 
     struct libevdev *dev = libevdev_new();
     if (!dev) {
-        fprintf(stderr, "Failed to allocate libevdev\n");
+        g_error("Failed to allocate libevdev\n");
         return;
     }
 
@@ -51,18 +51,18 @@ void setup_virtual_gamepad(void) {
     libevdev_enable_event_code(dev, EV_ABS, ABS_RY, &abs);     // Right stick Y
 
     if (libevdev_uinput_create_from_device(dev, LIBEVDEV_UINPUT_OPEN_MANAGED, &uidev) < 0) {
-        fprintf(stderr, "Failed to create uinput device\n");
+        g_error("Failed to create uinput device\n");
         libevdev_free(dev);
         return;
     }
 
     libevdev_free(dev);
-    printf("Virtual gamepad created at %s\n", libevdev_uinput_get_devnode(uidev));
+    g_message("Virtual gamepad created at %s\n", libevdev_uinput_get_devnode(uidev));
 }
 
 void cleanup_virtual_gamepad(void) {
     if (uidev) {
-        printf("Removing virtual gamepad\n");
+        g_message("Removing virtual gamepad\n");
         libevdev_uinput_destroy(uidev);
         uidev = NULL;
     }
