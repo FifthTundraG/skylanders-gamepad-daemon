@@ -33,8 +33,8 @@ A large list of nearby Bluetooth devices will appear. Enable pairing on your dev
 ```
 connect AA:BB:CC:DD:EE:FF
 ```
-You may now exit the interactive shell by pressing Ctrl+D or by typing `exit`.
 Finally, disable scanning:
 ```
 scan off
 ```
+You may now exit the interactive shell by pressing Ctrl+D or by typing `exit`.
