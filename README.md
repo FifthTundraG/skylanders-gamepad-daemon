@@ -1,3 +1,10 @@
+> ⚠️ **Maintenance Notice**
+>
+> This project is now in **maintenance mode only**. No new features will be added, and only critical fixes or updates may be made.
+>
+> Development has moved to a new project:
+> https://github.com/FifthTundraG/SkylandersGamepadManager
+
 # skylanders-gamepad-daemon
 Userspace daemon providing support for the Skylanders Trap Team mobile gamepad controller (BLE) on Linux through uinput.
 
